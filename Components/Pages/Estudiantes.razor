@@ -1,0 +1,68 @@
+@page "/estudiantes"
+@using LP3.BlazorServer.Data
+@using LP3.BlazorServer.Domain.Entities
+@using Microsoft.EntityFrameworkCore
+@inject ApplicationDbContext DbContext
+
+<PageTitle>Gestión de Estudiantes</PageTitle>
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-people-fill"></i> Listado de Estudiantes</h2>
+        <button class="btn btn-primary" @onclick="MostrarFormulario">
+            <i class="bi bi-plus-circle"></i> Nuevo Estudiante
+        </button>
+    </div>
+
+    @if (estudiantes == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (!estudiantes.Any())
+    {
+        <div class="alert alert-info">No hay estudiantes registrados en el sistema actualmente.</div>
+    }
+    else
+    {
+        <table class="table table-hover table-bordered shadow-sm bg-white">
+            <thead class="table-dark">
+                <tr>
+                    <th>Matrícula</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var est in estudiantes)
+                {
+                    <tr>
+                        <td><strong>@est.Matricula</strong></td>
+                        <td>@est.Nombre</td>
+                        <td>@est.Apellido</td>
+                        <td>@est.Email</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private List<Estudiante>? estudiantes;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Carga los estudiantes directamente de la base de datos app.db que creamos hoy
+        estudiantes = await DbContext.Estudiantes.ToListAsync();
+    }
+
+    private void MostrarFormulario()
+    {
+        // Próximo paso: Formulario de inserción
+    }
+}
