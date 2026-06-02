@@ -1,4 +1,5 @@
 @page "/estudiantes"
+@rendermode InteractiveServer
 @using LP3.BlazorServer.Data
 @using LP3.BlazorServer.Domain.Entities
 @using Microsoft.EntityFrameworkCore
@@ -9,7 +10,7 @@
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2><i class="bi bi-people-fill"></i> Listado de Estudiantes</h2>
-        <button class="btn btn-primary" @onclick="MostrarFormulario">
+        <button class="btn btn-primary" @onclick="AbrirModal">
             <i class="bi bi-plus-circle"></i> Nuevo Estudiante
         </button>
     </div>
@@ -52,17 +53,78 @@
     }
 </div>
 
+@if (mostrarModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5); z-index: 1050;">
+        <div class="modal-dialog mt-5" style="max-width: 500px;">
+            <div class="modal-content shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Registrar Nuevo Estudiante</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <EditForm Model="@nuevoEstudiante" OnValidSubmit="GuardarEstudiante">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Matrícula</label>
+                            <InputText class="form-control" @bind-Value="nuevoEstudiante.Matricula" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre</label>
+                            <InputText class="form-control" @bind-Value="nuevoEstudiante.Nombre" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Apellido</label>
+                            <InputText class="form-control" @bind-Value="nuevoEstudiante.Apellido" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Correo Electrónico</label>
+                            <InputText class="form-control" @bind-Value="nuevoEstudiante.Email" />
+                        </div>
+
+                        <div class="modal-footer px-0 pb-0 pt-3">
+                            <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                            <button type="submit" class="btn btn-success">Guardar Estudiante</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<Estudiante>? estudiantes;
+    private Estudiante nuevoEstudiante = new Estudiante();
+    private bool mostrarModal = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // Carga los estudiantes directamente de la base de datos app.db que creamos hoy
+        await CargarEstudiantes();
+    }
+
+    private async Task CargarEstudiantes()
+    {
         estudiantes = await DbContext.Estudiantes.ToListAsync();
     }
 
-    private void MostrarFormulario()
+    private void AbrirModal()
     {
-        // Próximo paso: Formulario de inserción
+        nuevoEstudiante = new Estudiante();
+        mostrarModal = true;
+    }
+
+    private void CerrarModal()
+    {
+        mostrarModal = false;
+    }
+
+    private async Task GuardarEstudiante()
+    {
+        DbContext.Estudiantes.Add(nuevoEstudiante);
+        await DbContext.SaveChangesAsync();
+        await CargarEstudiantes();
+        CerrarModal();
     }
 }
