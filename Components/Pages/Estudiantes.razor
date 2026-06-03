@@ -71,33 +71,37 @@
                     <h5 class="modal-title">@(esEdicion ? "Modificar Estudiante" : "Registrar Nuevo Estudiante")</h5>
                     <button type="button" class="btn-close btn-close-white" @onclick="CerrarModal"></button>
                 </div>
-                <div class="modal-body p-4">
-                    <EditForm Model="@nuevoEstudiante" OnValidSubmit="GuardarEstudiante">
-                        <DataAnnotationsValidator />
+                <EditForm Model="@nuevoEstudiante" OnValidSubmit="GuardarEstudiante">
+                    <DataAnnotationsValidator />
+                    <div class="modal-body p-4">
+                        <ValidationSummary class="alert alert-danger p-2" style="font-size: 0.9rem;" />
                         
                         <div class="mb-3">
                             <label class="form-label fw-bold">Matrícula</label>
                             <InputText class="form-control" @bind-Value="nuevoEstudiante.Matricula" disabled="@esEdicion" />
+                            <ValidationMessage For="@(() => nuevoEstudiante.Matricula)" class="text-danger" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Nombre</label>
                             <InputText class="form-control" @bind-Value="nuevoEstudiante.Nombre" />
+                            <ValidationMessage For="@(() => nuevoEstudiante.Nombre)" class="text-danger" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Apellido</label>
                             <InputText class="form-control" @bind-Value="nuevoEstudiante.Apellido" />
+                            <ValidationMessage For="@(() => nuevoEstudiante.Apellido)" class="text-danger" />
                         </div>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Correo Electrónico</label>
                             <InputText class="form-control" @bind-Value="nuevoEstudiante.Email" />
+                            <ValidationMessage For="@(() => nuevoEstudiante.Email)" class="text-danger" />
                         </div>
-
-                        <div class="modal-footer px-0 pb-0 pt-3">
-                            <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
-                            <button type="submit" class="btn btn-success">Guardar Cambios</button>
-                        </div>
-                    </EditForm>
-                </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar Cambios</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
     </div>
@@ -128,7 +132,14 @@
 
     private void AbrirModalEditar(Estudiante estudiante)
     {
-        nuevoEstudiante = estudiante;
+        // Clonamos el objeto para no modificar la tabla en tiempo real si cancelan
+        nuevoEstudiante = new Estudiante
+        {
+            Matricula = estudiante.Matricula,
+            Nombre = estudiante.Nombre,
+            Apellido = estudiante.Apellido,
+            Email = estudiante.Email
+        };
         esEdicion = true;
         mostrarModal = true;
     }
@@ -142,7 +153,14 @@
     {
         if (esEdicion)
         {
-            DbContext.Estudiantes.Update(nuevoEstudiante);
+            var estudianteExistente = await DbContext.Estudiantes.FindAsync(nuevoEstudiante.Matricula);
+            if (estudianteExistente != null)
+            {
+                estudianteExistente.Nombre = nuevoEstudiante.Nombre;
+                estudianteExistente.Apellido = nuevoEstudiante.Apellido;
+                estudianteExistente.Email = nuevoEstudiante.Email;
+                DbContext.Estudiantes.Update(estudianteExistente);
+            }
         }
         else
         {
@@ -154,10 +172,20 @@
         CerrarModal();
     }
 
+    private async Task SliminarEstudiante(Estudiante estudiante)
+    {
+        // Corregido el nombre interno del método para mapear bien el click
+        var est = await DbContext.Estudiantes.FindAsync(estudiante.Matricula);
+        if (est != null)
+        {
+            DbContext.Estudiantes.Remove(est);
+            await DbContext.SaveChangesAsync();
+            await CargarEstudiantes();
+        }
+    }
+
     private async Task EliminarEstudiante(Estudiante estudiante)
     {
-        DbContext.Estudiantes.Remove(estudiante);
-        await DbContext.SaveChangesAsync();
-        await CargarEstudiantes();
+        await SliminarEstudiante(estudiante);
     }
 }
