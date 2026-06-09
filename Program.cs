@@ -34,6 +34,7 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+builder.Services.AddScoped<LP3.BlazorServer.Application.Services.IEstudianteService, LP3.BlazorServer.Application.Services.EstudianteService>();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
