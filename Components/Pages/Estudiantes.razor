@@ -1,45 +1,93 @@
 @page "/estudiantes"
 @using LP3.BlazorServer.Domain.Entities
 @using LP3.BlazorServer.Application.Services
+@using Microsoft.AspNetCore.Components.Forms
 @inject IEstudianteService Service
+@rendermode InteractiveServer
 
-<h3>Estudiantes</h3>
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Listado de Estudiantes</h2>
+        <button class="btn btn-primary" @onclick="Nuevo">Nuevo Estudiante</button>
+    </div>
 
-<button class="btn btn-primary" @onclick="Nuevo">Nuevo</button>
-
-<table class="table">
-    <thead>
-        <tr>
-            <th>Id</th>
-            <th>Nombre</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-
-    <tbody>
-        @foreach (var e in estudiantes)
-        {
+    <table class="table table-bordered align-middle">
+        <thead class="table-dark">
             <tr>
-                <td>@e.Id</td>
-                <td>@e.Nombre</td>
-                <td>
-                    <button class="btn btn-warning" @onclick="() => Editar(e)">Editar</button>
-                    <button class="btn btn-danger" @onclick="() => Eliminar(e.Id)">Eliminar</button>
-                </td>
+                <th>Matrícula</th>
+                <th>Nombre</th>
+                <th>Apellido</th>
+                <th>Email</th>
+                <th class="text-center" style="width: 180px;">Acciones</th>
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @if (estudiantes == null || !estudiantes.Any())
+            {
+                <tr>
+                    <td colspan="5" class="text-center text-muted">Cargando estudiantes...</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var e in estudiantes)
+                {
+                    <tr>
+                        <td>@e.Matricula</td>
+                        <td>@e.Nombre</td>
+                        <td>@e.Apellido</td>
+                        <td>@e.Email</td>
+                        <td class="text-center">
+                            <button class="btn btn-warning btn-sm me-2 text-dark fw-bold" @onclick="() => Editar(e)">Editar</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => Eliminar(e.Id)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
 
 @if (mostrarForm)
 {
-    <div class="card p-3">
-        <input class="form-control" placeholder="Nombre" @bind="modelo.Nombre" />
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content p-3">
+                <div class="modal-header">
+                    <h5 class="modal-title">@(modelo.Id == 0 ? "Nuevo Estudiante" : "Editar Estudiante")</h5>
+                    <button type="button" class="btn-close" @onclick="Cancelar"></button>
+                </div>
+                
+                <EditForm Model="modelo" OnValidSubmit="Guardar">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="text-danger mb-3" />
 
-        <br />
-
-        <button class="btn btn-success" @onclick="Guardar">Guardar</button>
-        <button class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Matrícula</label>
+                            <InputText class="form-control" @bind-Value="modelo.Matricula" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <InputText class="form-control" @bind-Value="modelo.Nombre" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Apellido</label>
+                            <InputText class="form-control" @bind-Value="modelo.Apellido" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control" type="email" @bind-Value="modelo.Email" />
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
     </div>
 }
 
@@ -50,7 +98,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        estudiantes = await Service.GetAllAsync();
+        estudiantes = await Service.GetAllAsync() ?? new List<Estudiante>();
     }
 
     void Nuevo()
@@ -64,7 +112,13 @@
         modelo = new Estudiante
         {
             Id = e.Id,
-            Nombre = e.Nombre
+            Matricula = e.Matricula,
+            Nombre = e.Nombre,
+            Apellido = e.Apellido,
+            Email = e.Email,
+            Estado = e.Estado,
+            FechaIngreso = e.FechaIngreso,
+            CreadoEn = e.CreadoEn
         };
 
         mostrarForm = true;
@@ -77,14 +131,16 @@
         else
             await Service.UpdateAsync(modelo);
 
-        estudiantes = await Service.GetAllAsync();
+        estudiantes = await Service.GetAllAsync() ?? new List<Estudiante>();
         mostrarForm = false;
+        StateHasChanged();
     }
 
     async Task Eliminar(int id)
     {
         await Service.DeleteAsync(id);
-        estudiantes = await Service.GetAllAsync();
+        estudiantes = await Service.GetAllAsync() ?? new List<Estudiante>();
+        StateHasChanged();
     }
 
     void Cancelar()

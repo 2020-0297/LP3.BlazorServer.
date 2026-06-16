@@ -1,47 +1,44 @@
-using LP3.BlazorServer.Data;
+using LP3.BlazorServer.Data.Repositories;
 using LP3.BlazorServer.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace LP3.BlazorServer.Application.Services
 {
     public class EstudianteService : IEstudianteService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IEstudianteRepository _repository;
 
-        public EstudianteService(ApplicationDbContext context)
+        public EstudianteService(IEstudianteRepository repository)
         {
-            _context = context;
+            _repository = repository;
         }
 
         public async Task<List<Estudiante>> GetAllAsync()
         {
-            return await _context.Estudiantes.ToListAsync();
+            var data = await _repository.ListAsync();
+            return data.ToList();
         }
 
         public async Task<Estudiante?> GetByIdAsync(int id)
         {
-            return await _context.Estudiantes.FindAsync(id);
+            return await _repository.GetByIdAsync(id);
         }
 
         public async Task AddAsync(Estudiante estudiante)
         {
-            _context.Estudiantes.Add(estudiante);
-            await _context.SaveChangesAsync();
+            await _repository.AddAsync(estudiante);
         }
 
         public async Task UpdateAsync(Estudiante estudiante)
         {
-            _context.Estudiantes.Update(estudiante);
-            await _context.SaveChangesAsync();
+            await _repository.Update(estudiante);
         }
 
         public async Task DeleteAsync(int id)
         {
-            var est = await _context.Estudiantes.FindAsync(id);
+            var est = await _repository.GetByIdAsync(id);
             if (est != null)
             {
-                _context.Estudiantes.Remove(est);
-                await _context.SaveChangesAsync();
+                await _repository.Remove(est);
             }
         }
     }

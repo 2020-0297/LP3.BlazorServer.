@@ -5,7 +5,10 @@ namespace LP3.BlazorServer.Domain.Entities;
 
 public class Estudiante
 {
-    public int Id { get; set; }
+    public int Id { get; set; }  
+
+    [Required(ErrorMessage = "La matr√≠cula es obligatoria")]
+    public string Matricula { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "El nombre es obligatorio")]
     public string Nombre { get; set; } = string.Empty;
@@ -13,15 +16,15 @@ public class Estudiante
     [Required(ErrorMessage = "El apellido es obligatorio")]
     public string Apellido { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "La matrÌcula es obligatoria")]
-    public string Matricula { get; set; } = string.Empty;
-
     [Required(ErrorMessage = "El correo es obligatorio")]
-    [EmailAddress(ErrorMessage = "Correo electrÛnico inv·lido")]
+    [EmailAddress(ErrorMessage = "Correo electr√≥nico inv√°lido")]
     public string Email { get; set; } = string.Empty;
 
     public DateTime FechaIngreso { get; set; } = DateTime.UtcNow;
+
     public EstadoEstudiante Estado { get; set; } = EstadoEstudiante.Activo;
+
     public DateTime CreadoEn { get; set; } = DateTime.UtcNow;
+
     public DateTime? ActualizadoEn { get; set; }
 }
