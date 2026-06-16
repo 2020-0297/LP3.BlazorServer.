@@ -1,0 +1,160 @@
+@rendermode InteractiveServer
+@page "/profesores"
+@using LP3.BlazorServer.Application.Services
+@using LP3.BlazorServer.Shared.DTOs
+@inject IProfesorService ProfesorService
+
+<div class="container-fluid px-4">
+    <div class="d-flex justify-content-between align-items-center my-4">
+        <h2>Gestión de Profesores</h2>
+        <button class="btn btn-primary" @onclick="MostrarFormularioNuevo">Nuevo Profesor</button>
+    </div>
+
+    @if (mostrarFormulario)
+    {
+        <div class="card mb-4 shadow-sm">
+            <div class="card-header bg-light">
+                <h5>@(profesorModel.Id == 0 ? "Registrar Nuevo Profesor" : "Editar Profesor")</h5>
+            </div>
+            <div class="card-body">
+                <EditForm Model="profesorModel" OnValidSubmit="GuardarProfesor">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Nombre</label>
+                            <InputText @bind-Value="profesorModel.Nombre" class="form-control" />
+                            <ValidationMessage For="() => profesorModel.Nombre" class="text-danger" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Apellido</label>
+                            <InputText @bind-Value="profesorModel.Apellido" class="form-control" />
+                            <ValidationMessage For="() => profesorModel.Apellido" class="text-danger" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Correo Institucional</label>
+                            <InputText @bind-Value="profesorModel.Correo" class="form-control" />
+                            <ValidationMessage For="() => profesorModel.Correo" class="text-danger" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label font-weight-bold">Especialidad / Área</label>
+                            <InputText @bind-Value="profesorModel.Especialidad" class="form-control" />
+                            <ValidationMessage For="() => profesorModel.Especialidad" class="text-danger" />
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <button type="button" class="btn btn-secondary" @onclick="Cancelar">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <table class="table table-hover mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre Completo</th>
+                        <th>Correo</th>
+                        <th>Especialidad</th>
+                        <th class="text-center">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (profesores == null)
+                    {
+                        <tr><td colspan="5" class="text-center py-4">Cargando profesores...</td></tr>
+                    }
+                    else if (!profesores.Any())
+                    {
+                        <tr><td colspan="5" class="text-center py-4 text-muted">No se encontraron profesores disponibles.</td></tr>
+                    }
+                    else
+                    {
+                        @foreach (var prof in profesores)
+                        {
+                            <tr>
+                                <td>@prof.Id</td>
+                                <td>@prof.Nombre @prof.Apellido</td>
+                                <td>@prof.Correo</td>
+                                <td><span class="badge bg-info text-dark">@prof.Especialidad</span></td>
+                                <td class="text-center">
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-warning" @onclick="() => EditarProfesor(prof)">Editar</button>
+                                        <button class="btn btn-outline-danger" @onclick="() => BorrarProfesor(prof.Id)">Borrar</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private List<ProfesorDto>? profesores;
+    private ProfesorDto profesorModel = new();
+    private bool mostrarFormulario = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarProfesores();
+    }
+
+    private async Task CargarProfesores()
+    {
+        profesores = await ProfesorService.GetAllAsync();
+    }
+
+    private void MostrarFormularioNuevo()
+    {
+        profesorModel = new();
+        mostrarFormulario = true;
+    }
+
+    private void EditarProfesor(ProfesorDto prof)
+    {
+        profesorModel = new()
+        {
+            Id = prof.Id,
+            Nombre = prof.Nombre,
+            Apellido = prof.Apellido,
+            Correo = prof.Correo,
+            Especialidad = prof.Especialidad,
+            Activo = prof.Activo
+        };
+        mostrarFormulario = true;
+    }
+
+    private async Task GuardarProfesor()
+    {
+        if (profesorModel.Id == 0)
+        {
+            await ProfesorService.CreateAsync(profesorModel);
+        }
+        else
+        {
+            await ProfesorService.UpdateAsync(profesorModel.Id, profesorModel);
+        }
+
+        mostrarFormulario = false;
+        await CargarProfesores();
+    }
+
+    private async Task BorrarProfesor(int id)
+    {
+        await ProfesorService.DeleteAsync(id);
+        await CargarProfesores();
+    }
+
+    private void Cancelar()
+    {
+        mostrarFormulario = false;
+    }
+}

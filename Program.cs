@@ -44,6 +44,7 @@ builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSe
 // ==========================================
 builder.Services.AddScoped<IEstudianteService, EstudianteService>();
 builder.Services.AddScoped<ICursoService, CursoService>();
+builder.Services.AddScoped<IProfesorService, ProfesorService>(); // 🔥 Inyección del módulo de Profesores agregada con éxito
 
 // ==========================================
 // 🔥 REPOSITORIOS (DATA LAYER)

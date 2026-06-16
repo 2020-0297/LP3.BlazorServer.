@@ -13,5 +13,6 @@ namespace LP3.BlazorServer.Data
 
         public DbSet<Estudiante> Estudiantes { get; set; }
         public DbSet<Curso> Cursos { get; set; }
+        public DbSet<Profesor> Profesores { get; set; }
     }
 }
