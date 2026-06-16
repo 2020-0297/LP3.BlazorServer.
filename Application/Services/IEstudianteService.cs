@@ -1,13 +1,13 @@
-using LP3.BlazorServer.Shared.DTOs;
+using LP3.BlazorServer.Domain.Entities;
 
-namespace LP3.BlazorServer.Application.Services;
-
-public interface IEstudianteService
+namespace LP3.BlazorServer.Application.Services
 {
-    Task<ICollection<EstudianteDto>> GetAll();
-    Task<EstudianteDto?> GetByIdAsync(int id);
-    Task<EstudianteDto?> GetByMatriculaAsync(string matricula);
-    Task<bool> CreateAsync(EstudianteDto dto);
-    Task<bool> UpdateAsync(int id, EstudianteDto dto);
-    Task<bool> DeleteAsync(int id);
+    public interface IEstudianteService
+    {
+        Task<List<Estudiante>> GetAllAsync();
+        Task<Estudiante?> GetByIdAsync(int id);
+        Task AddAsync(Estudiante estudiante);
+        Task UpdateAsync(Estudiante estudiante);
+        Task DeleteAsync(int id);
+    }
 }

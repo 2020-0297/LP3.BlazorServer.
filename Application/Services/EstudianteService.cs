@@ -1,85 +1,48 @@
-using LP3.BlazorServer.Data.Repositories;
+using LP3.BlazorServer.Data;
 using LP3.BlazorServer.Domain.Entities;
-using LP3.BlazorServer.Shared.DTOs;
-using LP3.BlazorServer.Shared.Extensions;
+using Microsoft.EntityFrameworkCore;
 
-namespace LP3.BlazorServer.Application.Services;
-
-public class EstudianteService(IEstudianteRepository estudianteRepository) : IEstudianteService
+namespace LP3.BlazorServer.Application.Services
 {
-    public async Task<ICollection<EstudianteDto>> GetAll()
+    public class EstudianteService : IEstudianteService
     {
-        var estudiantes = await estudianteRepository.ListAsync();
-        return estudiantes.Select(e => e.ToDto()).ToList();
-    }
+        private readonly ApplicationDbContext _context;
 
-    public async Task<EstudianteDto?> GetByIdAsync(int id)
-    {
-        var estudiante = await estudianteRepository.GetByIdAsync(id);
-        return estudiante?.ToDto();
-    }
-
-    public async Task<EstudianteDto?> GetByMatriculaAsync(string matricula)
-    {
-        var estudiante = await estudianteRepository.GetByMatriculaAsync(matricula);
-        return estudiante?.ToDto();
-    }
-
-    public async Task<bool> CreateAsync(EstudianteDto dto)
-    {
-        try
+        public EstudianteService(ApplicationDbContext context)
         {
-            var estudiante = new Estudiante
+            _context = context;
+        }
+
+        public async Task<List<Estudiante>> GetAllAsync()
+        {
+            return await _context.Estudiantes.ToListAsync();
+        }
+
+        public async Task<Estudiante?> GetByIdAsync(int id)
+        {
+            return await _context.Estudiantes.FindAsync(id);
+        }
+
+        public async Task AddAsync(Estudiante estudiante)
+        {
+            _context.Estudiantes.Add(estudiante);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateAsync(Estudiante estudiante)
+        {
+            _context.Estudiantes.Update(estudiante);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task DeleteAsync(int id)
+        {
+            var est = await _context.Estudiantes.FindAsync(id);
+            if (est != null)
             {
-                Nombre = dto.Nombre,
-                Apellido = dto.Apellido,
-                Matricula = dto.Matricula,
-                FechaIngreso = DateTime.UtcNow,
-                Estado = Domain.Enums.EstadoEstudiante.Activo
-            };
-
-            await estudianteRepository.AddAsync(estudiante);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> UpdateAsync(int id, EstudianteDto dto)
-    {
-        try
-        {
-            var estudiante = await estudianteRepository.GetByIdAsync(id);
-            if (estudiante == null) return false;
-
-            estudiante.Nombre = dto.Nombre;
-            estudiante.Apellido = dto.Apellido;
-            estudiante.ActualizadoEn = DateTime.UtcNow;
-
-            await estudianteRepository.Update(estudiante);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    public async Task<bool> DeleteAsync(int id)
-    {
-        try
-        {
-            var estudiante = await estudianteRepository.GetByIdAsync(id);
-            if (estudiante == null) return false;
-
-            await estudianteRepository.Remove(estudiante);
-            return true;
-        }
-        catch
-        {
-            return false;
+                _context.Estudiantes.Remove(est);
+                await _context.SaveChangesAsync();
+            }
         }
     }
 }
