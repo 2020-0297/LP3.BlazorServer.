@@ -5,6 +5,7 @@ using LP3.BlazorServer.Components;
 using LP3.BlazorServer.Components.Account;
 using LP3.BlazorServer.Data;
 using LP3.BlazorServer.Data.Repositories; 
+using LP3.BlazorServer.Application.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,11 +39,15 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
-// ✅ SERVICE (ya lo tenías)
-builder.Services.AddScoped<LP3.BlazorServer.Application.Services.IEstudianteService,
-    LP3.BlazorServer.Application.Services.EstudianteService>();
+// ==========================================
+// 🚀 REGISTRO DE SERVICIOS (APPLICATION LAYER)
+// ==========================================
+builder.Services.AddScoped<IEstudianteService, EstudianteService>();
+builder.Services.AddScoped<ICursoService, CursoService>();
 
-// 🔥 REPOSITORIOS (NUEVO - LO QUE FALTABA)
+// ==========================================
+// 🔥 REPOSITORIOS (DATA LAYER)
+// ==========================================
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IEstudianteRepository, EstudianteRepository>();
 

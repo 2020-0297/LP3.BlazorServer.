@@ -1,0 +1,265 @@
+@page "/cursos"
+@using LP3.BlazorServer.Shared.DTOs
+@using LP3.BlazorServer.Application.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject ICursoService Service
+@rendermode InteractiveServer
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Gestión de Cursos</h2>
+        <button class="btn btn-primary" @onclick="Nuevo">Nuevo Curso</button>
+    </div>
+
+    <div class="card p-3 mb-4 bg-light shadow-sm">
+        <label class="form-label fw-bold">Buscar por Código de Curso</label>
+        <div class="input-group" style="max-width: 400px;">
+            <input type="text" class="form-control" placeholder="Ej: INF-321" @bind="codigoBusqueda" />
+            <button class="btn btn-secondary" @onclick="BuscarPorCodigo">Buscar</button>
+            @if (!string.IsNullOrEmpty(codigoBusqueda))
+            {
+                <button class="btn btn-outline-danger" @onclick="LimpiarBusqueda">Limpiar</button>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(mensajeBusqueda))
+        {
+            <div class="form-text text-info mt-2 fw-bold">@mensajeBusqueda</div>
+        }
+    </div>
+
+    <table class="table table-bordered align-middle">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Créditos</th>
+                <th class="text-center">Estado</th>
+                <th class="text-center" style="width: 180px;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (cursosVisualizados == null || !cursosVisualizados.Any())
+            {
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No se encontraron cursos disponibles.</td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var c in cursosVisualizados)
+                {
+                    <tr>
+                        <td>@c.Id</td>
+                        <td><span class="badge bg-secondary">@c.Codigo</span></td>
+                        <td>@c.Nombre</td>
+                        <td>@c.Creditos pts</td>
+                        <td class="text-center">
+                            @if (c.Activo)
+                            {
+                                <span class="badge bg-success">Activo</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Inactivo</span>
+                            }
+                        </td>
+                        <td class="text-center">
+                            <button class="btn btn-warning btn-sm me-2 text-dark fw-bold" @onclick="() => SeleccionarParaEditar(c)">Editar</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => SolicitarEliminar(c)">Eliminar</button>
+                        </td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (mostrarFormulario)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content p-3 shadow-lg">
+                <div class="modal-header bg-dark text-white rounded-top">
+                    <h5 class="modal-title">@(modelo.Id == 0 ? "Registrar Nuevo Curso" : "Modificar Curso Existente")</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CerrarFormulario"></button>
+                </div>
+                
+                <EditForm Model="modelo" OnValidSubmit="Guardar">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary class="alert alert-danger p-2 mt-3" />
+
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Código del Curso</label>
+                            <InputText class="form-control" @bind-Value="modelo.Codigo" placeholder="Ej: MAT-101" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Nombre del Curso</label>
+                            <InputText class="form-control" @bind-Value="modelo.Nombre" placeholder="Ej: Cálculo Integral" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Créditos académicos</label>
+                            <InputNumber class="form-control" @bind-Value="modelo.Creditos" />
+                        </div>
+                        
+                        @if (modelo.Id != 0)
+                        {
+                            <div class="mb-3 form-check">
+                                <InputCheckbox class="form-check-input" id="cursoActivo" @bind-Value="modelo.Activo" />
+                                <label class="form-check-label fw-bold text-success" for="cursoActivo">Curso Activo</label>
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Guardar Datos</button>
+                        <button type="button" class="btn btn-secondary" @onclick="CerrarFormulario">Cancelar</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@if (mostrarConfirmacionEliminar && cursoParaEliminar != null)
+{
+    <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.6);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title">¿Confirmar Eliminación?</h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CancelarEliminar"></button>
+                </div>
+                <div class="modal-body text-center p-4">
+                    <p class="fs-5">¿Estás seguro de que deseas borrar de forma permanente el curso?</p>
+                    <div class="alert alert-warning fw-bold">
+                        @cursoParaEliminar.Codigo - @cursoParaEliminar.Nombre
+                    </div>
+                    <small class="text-muted">Esta acción no se puede deshacer en la base de datos.</small>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button class="btn btn-danger px-4" @onclick="ConfirmarEliminar">Sí, Eliminar</button>
+                    <button class="btn btn-secondary px-4" @onclick="CancelarEliminar">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<CursoDto> todosLosCursos = new();
+    private List<CursoDto> cursosVisualizados = new();
+    private CursoDto modelo = new();
+    private CursoDto? cursoParaEliminar;
+
+    private string codigoBusqueda = string.Empty;
+    private string mensajeBusqueda = string.Empty;
+    
+    private bool mostrarFormulario = false;
+    private bool mostrarConfirmacionEliminar = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCursos();
+    }
+
+    private async Task CargarCursos()
+    {
+        todosLosCursos = await Service.GetAllAsync() ?? new List<CursoDto>();
+        cursosVisualizados = todosLosCursos;
+    }
+
+    private async Task BuscarPorCodigo()
+    {
+        if (string.IsNullOrWhiteSpace(codigoBusqueda))
+        {
+            mensajeBusqueda = "Por favor, escribe un código válido.";
+            cursosVisualizados = todosLosCursos;
+            return;
+        }
+
+        var resultado = await Service.GetByCodigoAsync(codigoBusqueda);
+        if (resultado != null)
+        {
+            cursosVisualizados = new List<CursoDto> { resultado };
+            mensajeBusqueda = "Resultado encontrado para: '" + codigoBusqueda.ToUpper() + "'";
+        }
+        else
+        {
+            cursosVisualizados = new List<CursoDto>();
+            mensajeBusqueda = "No se encontró ningún curso con el código '" + codigoBusqueda.ToUpper() + "'.";
+        }
+    }
+
+    private async Task LimpiarBusqueda()
+    {
+        codigoBusqueda = string.Empty;
+        mensajeBusqueda = string.Empty;
+        await CargarCursos();
+    }
+
+    private void Nuevo()
+    {
+        modelo = new CursoDto { Creditos = 1 };
+        mostrarFormulario = true;
+    }
+
+    private void SeleccionarParaEditar(CursoDto c)
+    {
+        modelo = new CursoDto
+        {
+            Id = c.Id,
+            Codigo = c.Codigo,
+            Nombre = c.Nombre,
+            Creditos = c.Creditos,
+            Activo = c.Activo
+        };
+        mostrarFormulario = true;
+    }
+
+    private async Task Guardar()
+    {
+        if (modelo.Id == 0)
+        {
+            await Service.CreateAsync(modelo);
+        }
+        else
+        {
+            await Service.UpdateAsync(modelo.Id, modelo);
+        }
+
+        await CargarCursos();
+        mostrarFormulario = false;
+        StateHasChanged();
+    }
+
+    private void SolicitarEliminar(CursoDto c)
+    {
+        cursoParaEliminar = c;
+        mostrarConfirmacionEliminar = true;
+    }
+
+    private async Task ConfirmarEliminar()
+    {
+        if (cursoParaEliminar != null)
+        {
+            await Service.DeleteAsync(cursoParaEliminar.Id);
+            await CargarCursos();
+        }
+        mostrarConfirmacionEliminar = false;
+        cursoParaEliminar = null;
+        StateHasChanged();
+    }
+
+    private void CancelarEliminar()
+    {
+        mostrarConfirmacionEliminar = false;
+        cursoParaEliminar = null;
+    }
+
+    private void CerrarFormulario()
+    {
+        mostrarFormulario = false;
+    }
+}
